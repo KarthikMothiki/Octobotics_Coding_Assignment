@@ -1,0 +1,9 @@
+pendulum_mass: 2.0
+pendulum_length: 300
+cart_mass: 0.5
+theta_0: 0
+theta_dot_0: 0
+theta_dot_dot_0: 0
+cart_x_0: 0
+cart_x_dot_0: 0
+cart_x_dot_dot_0: 0

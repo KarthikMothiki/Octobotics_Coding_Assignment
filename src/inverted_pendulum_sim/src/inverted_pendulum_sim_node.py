@@ -29,6 +29,7 @@ from math import sin, cos, pi
 from inverted_pendulum_sim.msg import CurrentState
 from inverted_pendulum_sim.msg import ControlForce
 from inverted_pendulum_sim.srv import SetParams, SetParamsResponse, SetParamsRequest
+import matplotlib.pyplot as plt
 
 '''
 pygame initialization and parameter settings
@@ -233,14 +234,20 @@ class InvertedPendulum:
         self.x_dot = self.x_dot + self.x_d_dot * self.dt
         self.x = self.x + self.x_dot * self.dt
 
+        # Ensure the cart stays within the frame
+        if abs(self.x) > (SCREENSIZE[0] / 2 - self.cart_w / 2):
+            self.x = (SCREENSIZE[0] / 2 - self.cart_w / 2) * (self.x / abs(self.x))
+
         self.theta_dot = self.theta_dot + self.theta_d_dot * self.dt
         self.theta = self.theta + self.theta_dot * self.dt
 
     def main_loop(self):
-        """
-        @brief: Main loop of the simulation.
-        :return: none
-        """
+        time_points = []
+        x_dot_points = []
+        x_d_dot_points = []
+        theta_dot_points = []
+        theta_d_dot_points = []
+
         while not rospy.is_shutdown():
             CLOCK.tick(FPS)
 
@@ -251,6 +258,12 @@ class InvertedPendulum:
             self.update()
 
             if self.draw_counter == 0:
+                time_points.append(rospy.get_time())
+                x_dot_points.append(self.x_dot)
+                x_d_dot_points.append(self.x_d_dot)
+                theta_dot_points.append(self.theta_dot)
+                theta_d_dot_points.append(self.theta_d_dot)
+
                 self.background()
                 self.draw()
                 pg.display.update()
@@ -266,6 +279,35 @@ class InvertedPendulum:
             state.curr_theta_dot_dot = self.theta_d_dot
 
             self.current_state_pub.publish(state)
+
+        # Plot the graphs
+        plt.figure(figsize=(12, 8))
+        plt.subplot(2, 2, 1)
+        plt.plot(time_points, x_dot_points, label='x_dot')
+        plt.xlabel('Time (s)')
+        plt.ylabel('x_dot')
+        plt.legend()
+
+        plt.subplot(2, 2, 2)
+        plt.plot(time_points, x_d_dot_points, label='x_d_dot')
+        plt.xlabel('Time (s)')
+        plt.ylabel('x_d_dot')
+        plt.legend()
+
+        plt.subplot(2, 2, 3)
+        plt.plot(time_points, theta_dot_points, label='theta_dot')
+        plt.xlabel('Time (s)')
+        plt.ylabel('theta_dot')
+        plt.legend()
+
+        plt.subplot(2, 2, 4)
+        plt.plot(time_points, theta_d_dot_points, label='theta_d_dot')
+        plt.xlabel('Time (s)')
+        plt.ylabel('theta_d_dot')
+        plt.legend()
+
+        plt.tight_layout()
+        plt.show()
 
     def draw(self):
         """
@@ -283,6 +325,12 @@ if __name__ == '__main__':
     """
     rospy.init_node("InvertedPendulum", anonymous=True)
     rospy.loginfo("[InvertedPendulum]: Node Started")
+    
+    # rospy.wait_for_service('/inverted_pendulum/set_params')
+    # set_params = rospy.ServiceProxy('/inverted_pendulum/set_params', SetParams)
+    # req = SetParamsRequest(pendulum_mass=2.0, pendulum_length=300, cart_mass=0.5, theta_0=0, theta_dot_0=0, theta_dot_dot_0=0, cart_x_0=0, cart_x_dot_0=0, cart_x_dot_dot_0=0)
+    # set_params(req)
+    
     InvertedPendulum()
 
     try:

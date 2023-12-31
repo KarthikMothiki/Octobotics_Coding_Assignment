@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <launch>
-    <node pkg="inverted_pendulum_sim" type="inverted_pendulum_sim_node.py" name="InvertedPendulum" output="screen"
-          required="true"/>
+    <node pkg="inverted_pendulum_sim" type="inverted_pendulum_sim_node.py" name="InvertedPendulum"
+     output="screen" required="true">
+        <rosparam command="load" file="$(find inverted_pendulum_sim)/config/inverted_pendulum_params.yaml" />
+    </node>
 </launch>
