@@ -58,15 +58,15 @@ roslaunch inverted_pendulum_sim inverted_pendulum_sim.launch
 ```
 - Run the pid code
 
-```bash
-roscd inverted_pendulum_contorller/src
-python3 pid_tuner.py
-```
-
 - Set the initial parameters
 
 ```bash
 rosservice call /inverted_pendulum/set_params 2.0 300 0.5 0 0 0 0 0 0
+```
+
+```bash
+roscd inverted_pendulum_contorller/src
+python3 pid_tuner.py
 ```
 
 ### Published Topics
