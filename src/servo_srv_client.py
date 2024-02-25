@@ -6,6 +6,7 @@ import rospy
 from std_srvs.srv import Trigger, TriggerResponse
 
 servo_pin = 13
+trigger_pin = 22  # GPIO pin to trigger PWM signal
 
 def pwm_control_callback(req):
     # Your PWM control logic here
@@ -39,7 +40,12 @@ def main():
     try:
         while True:
             time.sleep(0.25)
-            #print(val)
+
+            # Check if GPIO pin 22 is high or if the service is called
+            if GPIO.input(trigger_pin) == GPIO.HIGH or rospy.get_param('/servo_control', False):
+                # Call the PWM control callback
+                pwm_control_callback(None)
+
             for angle in range(0, val+1, 1):
                 duty_cycle = angle / 18.0 + 2.0
                 p.ChangeDutyCycle(duty_cycle)   
