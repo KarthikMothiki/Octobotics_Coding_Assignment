@@ -1,38 +1,64 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 
 import Jetson.GPIO as GPIO
 import time
 import rospy
 from std_srvs.srv import Trigger, TriggerResponse
 
-servo_pin = 15
+servo_pin = 18
 gpio_pin = 7
 p = None  # Global variable to hold PWM object
 
+def move_motor(angle):
+    """
+    Move the servo motor to the specified angle.
+
+    Args:
+        angle (int): The angle to move the servo motor to.
+
+    Returns:
+        str: A message indicating that the PWM signal has been sent.
+    """
+    global p  # Access the global PWM object
+
+    # Start PWM with duty cycle corresponding to the specified angle
+    p.start(0)
+    duty_0_deg = 2.5
+    duty_cycle = ((angle / 180.0) * (12.5 - duty_0_deg)) + duty_0_deg
+    p.ChangeDutyCycle(duty_cycle)
+
+    print('Moved to', angle, ' deg')
+    time.sleep(1)
+
+    # Set duty cycle for 0 degrees to bring motor back to 0 position
+    duty_cycle_0_deg = ((0 / 180.0) * (12.5 - duty_0_deg)) + duty_0_deg
+    p.ChangeDutyCycle(duty_cycle_0_deg)
+
+    print('Moved to', 0, ' deg')
+
+    mes = "PWM signal sent"
+    return mes
+
 def pwm_control_callback(req):
-    # Your PWM control logic here
-    # For example, set the servo to a specific angle
-    # Adjust val or any other parameters based on req data
-    val = 90
-    # Add any additional logic as needed
-    for angle in range(0, val+1, 1):
-        duty_cycle = angle / 18.0 + 2.0
-        p.ChangeDutyCycle(duty_cycle)   
-        time.sleep(0.05) 
-    print('Moved to', val, 'deg')  
+    """
+    ROS service callback function to handle servo control.
 
-    time.sleep(1)          
+    Args:
+        req: The request object.
 
-    for angle in range(val, 0, -1):
-        duty_cycle = angle / 18.0 + 2.0
-        p.ChangeDutyCycle(duty_cycle)   
-        time.sleep(0.05)
-    print('Moved to', 0, 'deg') 
+    Returns:
+        std_srvs.srv.TriggerResponse: A response indicating the success of the operation.
+    """
+    # Move the motor to 90 degrees
+    mes = move_motor(90)
 
     # Return success message
-    return TriggerResponse(success=True, message="PWM signal sent")
+    return TriggerResponse(success=True, message=mes)
 
 def main():
+    """
+    Main function to initialize GPIO pins and ROS node, and start servo control service.
+    """
     global p  # Access the global PWM object
     try:
         # Pin Setup:
@@ -42,12 +68,8 @@ def main():
         GPIO.setup(servo_pin, GPIO.OUT)
         GPIO.setup(gpio_pin, GPIO.IN)
         p = GPIO.PWM(servo_pin, 50)
-        
-        val = 90
-        incr = 1
-        p.start(0)
 
-        # Set GPIO pin 22 as input
+        # Set GPIO pin as input
         GPIO.setup(gpio_pin, GPIO.IN)
 
         # Initialize ROS node
@@ -56,15 +78,16 @@ def main():
         # Create ROS service
         rospy.Service('/servo_control', Trigger, pwm_control_callback)
 
-        print("PWM running. Press CTRL+C to exit.")
+        print ('PWM running. Press CTRL+C to exit.')
         while not rospy.is_shutdown():
             time.sleep(0.25)
 
-            # Check if GPIO pin 22 is high or service is called
+            # Check if GPIO pin is high or service is called
             if GPIO.input(gpio_pin) == GPIO.HIGH or rospy.get_param('/servo_control', False):
+
                 # Send PWM signal
                 pwm_control_callback(None)
-                
+
     except KeyboardInterrupt:
         pass
     finally:
